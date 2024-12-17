@@ -484,28 +484,31 @@ void RxStream::update_statistics(high_resolution_clock::time_point& start_time)
     auto diff = duration_cast<microseconds>(now - start_time);
     if (diff >= seconds{1}) {
         start_time = now;
-        std::cout << "Got " << std::setw(7) << m_statistics.received_packets
-                    << ((m_gpu == GPU_ID_INVALID) ? "" : " GPU") << " packets | "
-                    << std::fixed << std::setprecision(2);
 
-        double mbits_received = m_statistics.received_mbits();
-        if (mbits_received > 1000.) {
-            std::cout << std::setw(4) << (mbits_received / 1000.) << " Gbps during ";
-        } else {
-            std::cout << std::setw(4) << mbits_received << " Mbps during ";
-        }
-        std::cout << std::setw(4) << ((double)diff.count() / 1.e6) << " sec";
+        if(m_statistics.dropped_packets > 0)
+        {
+            std::cout << "Got " << std::setw(7) << m_statistics.received_packets
+                        << ((m_gpu == GPU_ID_INVALID) ? "" : " GPU") << " packets | "
+                        << std::fixed << std::setprecision(2);
 
-        if (m_use_checksum_header) {
-            if (m_gpu != GPU_ID_INVALID) {
-                m_statistics.checksum_mismatch = gpu_read_counter(m_statistics.gpu_checksum_mismatch);
+            double mbits_received = m_statistics.received_mbits();
+            if (mbits_received > 1000.) {
+                std::cout << std::setw(4) << (mbits_received / 1000.) << " Gbps during ";
+            } else {
+                std::cout << std::setw(4) << mbits_received << " Mbps during ";
             }
-            std::cout << " | " << m_statistics.dropped_packets << " dropped packets"
-                        << " | " << m_statistics.checksum_mismatch << " checksum errors";
+            std::cout << std::setw(4) << ((double)diff.count() / 1.e6) << " sec";
+
+            if (m_use_checksum_header) {
+                if (m_gpu != GPU_ID_INVALID) {
+                    m_statistics.checksum_mismatch = gpu_read_counter(m_statistics.gpu_checksum_mismatch);
+                }
+                std::cout << " | " << m_statistics.dropped_packets << " dropped packets"
+                            << " | " << m_statistics.checksum_mismatch << " checksum errors";
+            }
+
+            std::cout << std::endl;
         }
-
-        std::cout << std::endl;
-
         m_statistics.reset();
     }
 }
@@ -521,7 +524,7 @@ struct GenericReceiverArgs
     uint16_t port;
     uint16_t header_size = 0;
     uint16_t payload_size = 1500;
-    uint32_t buffer_elements = 1 << 16;
+    uint32_t buffer_elements = 1 << 18;
     uint16_t flow_id = 1;
     int gpu = GPU_ID_INVALID;
     bool use_checksum_header = false;
@@ -630,11 +633,11 @@ int main(int argc, char *argv[])
 
     CLI::App app{"Mellanox Rivermax Generic RX Demo App"};
     app.add_option("-i,--interface-ip", args.local_ip, "IP of the local interface")->required()->check(CLI::ValidIPV4);
-    app.add_option("-m,--dst-address", args.dst_ip, "Destination address to bind to")->required()->check(CLI::ValidIPV4);
-    app.add_option("-s,--src-address", args.src_ip, "Source address to read from")->required()->check(CLI::ValidIPV4);
-    app.add_option("-p,--port", args.port, "Receive port to use")->required()->check(CLI::Range(1, 65535));
+    app.add_option("-m,--dst-address", args.dst_ip, "Destination address to bind to")/*->required()*/->check(CLI::ValidIPV4);
+    app.add_option("-s,--src-address", args.src_ip, "Source address to read from")/*->required()*/->check(CLI::ValidIPV4);
+    app.add_option("-p,--port", args.port, "Receive port to use")/*->required()*/->check(CLI::Range(1, 65535));
     auto *opt_checksum = app.add_flag("-x,--checksum-header", args.use_checksum_header, "Use checksum header");
-    app.add_option("-r,--header-size", args.header_size, "User header size", true)->check(CLI::PositiveNumber)->excludes(opt_checksum);
+    app.add_option("-r,--header-size", args.header_size, "User header size", true)->check(CLI::PositiveNumber); // ->excludes(opt_checksum);
     app.add_option("-d,--data-size", args.payload_size, "User data (payload) size", true)->check(CLI::PositiveNumber);
     app.add_option("-k,--packets", args.buffer_elements, "Number of packets to allocate memory for", true)->check(CLI::PositiveNumber);
     app.add_option("-f,--flow-id", args.flow_id, "Flow id to use", true)->check(CLI::PositiveNumber);
@@ -675,13 +678,136 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    bool has_succeeded = run(args);
+
+    struct AddressInfo
+    {
+	    std::string  src_addr;
+        std::string  dst_addr;
+        uint16_t     dst_port;
+    };
+    std::vector<AddressInfo> addresstable;
+    addresstable.push_back({"172.30.1.10", "232.110.216.0",  50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.1",  50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.2",  50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.3",  50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.4",  50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.5",  50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.6",  50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.7",  50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.8",  50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.9",  50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.10", 50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.11", 50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.12", 50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.13", 50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.14", 50020});
+    addresstable.push_back({"172.30.1.10", "232.110.216.15", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.16", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.17", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.18", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.19", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.20", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.21", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.22", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.23", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.24", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.25", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.26", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.27", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.28", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.29", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.30", 50020});
+    addresstable.push_back({"172.30.1.12", "232.110.216.31", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.32", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.33", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.34", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.35", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.36", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.37", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.38", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.39", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.40", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.41", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.42", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.43", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.44", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.45", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.46", 50020});
+    addresstable.push_back({"172.30.1.14", "232.110.216.47", 50020});
+
+    addresstable.push_back({"172.30.1.20", "232.210.216.0",  50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.1",  50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.2",  50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.3",  50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.4",  50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.5",  50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.6",  50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.7",  50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.8",  50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.9",  50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.10", 50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.11", 50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.12", 50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.13", 50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.14", 50020});
+    addresstable.push_back({"172.30.1.20", "232.210.216.15", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.16", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.17", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.18", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.19", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.20", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.21", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.22", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.23", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.24", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.25", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.26", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.27", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.28", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.29", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.30", 50020});
+    addresstable.push_back({"172.30.1.22", "232.210.216.31", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.32", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.33", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.34", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.35", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.36", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.37", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.38", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.39", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.40", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.41", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.42", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.43", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.44", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.45", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.46", 50020});
+    addresstable.push_back({"172.30.1.24", "232.210.216.47", 50020});
+
+    std::vector<std::thread> threads;   
+    for(int nn=0; nn<48; nn++)
+    {
+        GenericReceiverArgs params = args;
+        params.src_ip = addresstable[nn].src_addr;
+        params.dst_ip = addresstable[nn].dst_addr;
+        params.port   = addresstable[nn].dst_port;
+        
+        params.cpu_affinity.clear();
+        params.cpu_affinity.push_back(28 + (nn%4));
+
+        threads.push_back(std::thread(run, params));
+    }
+    for(auto& thread : threads)
+    {
+        thread.join();
+    }
 
     rmax_status = rmx_cleanup();
     if (rmax_status != RMX_OK) {
         std::cerr << "Failed to clean up Rivermax; error: " << rmax_status << std::endl;
-        has_succeeded = false;
+        // has_succeeded = false;
     }
 
-    return has_succeeded ? EXIT_SUCCESS : EXIT_FAILURE;
+    // return has_succeeded ? EXIT_SUCCESS : EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }
