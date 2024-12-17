@@ -448,15 +448,22 @@ void RxStream::process_packets(const rmx_input_completion *comp)
         if (m_use_checksum_header) {
             ChecksumHeader *hdr = (ChecksumHeader*)header_ptr;
 
-            check_packets_drop(ntohl(hdr->sequence));
+            uint32_t seqnum = header_ptr[3] | header_ptr[2] << 8;            
+            uint8_t cc = 0x0F & header_ptr[0];
+            uint8_t offset = cc * RTP_HEADER_CSRC_GRANULARITY_BYTES;
+            seqnum |= header_ptr[offset + 12] << 24 | header_ptr[offset + 13] << 16;
+            // printf("header:%s headersize:%ld offset:%d seq: %d\n", is_hds_used()?"o":"x", header_size, offset, seqnum);
+            check_packets_drop(seqnum);
 
-            // Calculate and compare the packet checksum.
-            uint32_t checksum = ntohl(hdr->checksum);
-            if (m_gpu == GPU_ID_INVALID) {
-                host_compare_checksum(checksum, data, payload_size);
-            } else {
-                gpu_compare_checksum(checksum, const_cast<uint8_t*>(data), payload_size, m_statistics.gpu_checksum_mismatch);
-            }
+            // check_packets_drop(ntohl(hdr->sequence));
+
+            // // Calculate and compare the packet checksum.
+            // uint32_t checksum = ntohl(hdr->checksum);
+            // if (m_gpu == GPU_ID_INVALID) {
+            //     host_compare_checksum(checksum, data, payload_size);
+            // } else {
+            //     gpu_compare_checksum(checksum, const_cast<uint8_t*>(data), payload_size, m_statistics.gpu_checksum_mismatch);
+            // }
         }
 
         // Increment source data pointers
@@ -485,7 +492,7 @@ void RxStream::update_statistics(high_resolution_clock::time_point& start_time)
     if (diff >= seconds{1}) {
         start_time = now;
 
-        if(m_statistics.dropped_packets > 0)
+        // if(m_statistics.dropped_packets > 0)
         {
             std::cout << "Got " << std::setw(7) << m_statistics.received_packets
                         << ((m_gpu == GPU_ID_INVALID) ? "" : " GPU") << " packets | "
@@ -500,11 +507,11 @@ void RxStream::update_statistics(high_resolution_clock::time_point& start_time)
             std::cout << std::setw(4) << ((double)diff.count() / 1.e6) << " sec";
 
             if (m_use_checksum_header) {
-                if (m_gpu != GPU_ID_INVALID) {
-                    m_statistics.checksum_mismatch = gpu_read_counter(m_statistics.gpu_checksum_mismatch);
-                }
-                std::cout << " | " << m_statistics.dropped_packets << " dropped packets"
-                            << " | " << m_statistics.checksum_mismatch << " checksum errors";
+                // if (m_gpu != GPU_ID_INVALID) {
+                //     m_statistics.checksum_mismatch = gpu_read_counter(m_statistics.gpu_checksum_mismatch);
+                // }
+                std::cout << " | " << m_statistics.dropped_packets << " dropped packets";
+                            // << " | " << m_statistics.checksum_mismatch << " checksum errors";
             }
 
             std::cout << std::endl;
@@ -557,9 +564,9 @@ bool run(const GenericReceiverArgs& args)
 
     // If special checksum header is needed, set specific header size for it.
     uint16_t expected_header_size = args.header_size;
-    if (args.use_checksum_header) {
-        expected_header_size = sizeof(ChecksumHeader);
-    }
+    // if (args.use_checksum_header) {
+    //     expected_header_size = sizeof(ChecksumHeader);
+    // }
 
     std::unique_ptr<RxStream> p_stream = std::make_unique<RxStream>(RMX_INPUT_APP_PROTOCOL_PACKET,
                                       RMX_INPUT_TIMESTAMP_RAW_NANO,
@@ -785,7 +792,7 @@ int main(int argc, char *argv[])
     addresstable.push_back({"172.30.1.24", "232.210.216.47", 50020});
 
     std::vector<std::thread> threads;   
-    for(int nn=0; nn<48; nn++)
+    for(int nn=0; nn<72; nn++)
     {
         GenericReceiverArgs params = args;
         params.src_ip = addresstable[nn].src_addr;
