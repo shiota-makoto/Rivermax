@@ -713,6 +713,7 @@ int main(int argc, char *argv[])
     addresstable.push_back({"172.30.1.10", "232.110.216.13", 50020});
     addresstable.push_back({"172.30.1.10", "232.110.216.14", 50020});
     addresstable.push_back({"172.30.1.10", "232.110.216.15", 50020});
+
     addresstable.push_back({"172.30.1.12", "232.110.216.16", 50020});
     addresstable.push_back({"172.30.1.12", "232.110.216.17", 50020});
     addresstable.push_back({"172.30.1.12", "232.110.216.18", 50020});
@@ -729,6 +730,7 @@ int main(int argc, char *argv[])
     addresstable.push_back({"172.30.1.12", "232.110.216.29", 50020});
     addresstable.push_back({"172.30.1.12", "232.110.216.30", 50020});
     addresstable.push_back({"172.30.1.12", "232.110.216.31", 50020});
+
     addresstable.push_back({"172.30.1.14", "232.110.216.32", 50020});
     addresstable.push_back({"172.30.1.14", "232.110.216.33", 50020});
     addresstable.push_back({"172.30.1.14", "232.110.216.34", 50020});
@@ -745,6 +747,23 @@ int main(int argc, char *argv[])
     addresstable.push_back({"172.30.1.14", "232.110.216.45", 50020});
     addresstable.push_back({"172.30.1.14", "232.110.216.46", 50020});
     addresstable.push_back({"172.30.1.14", "232.110.216.47", 50020});
+
+    addresstable.push_back({"172.30.1.16", "232.110.216.48", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.49", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.50", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.51", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.52", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.53", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.54", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.55", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.56", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.57", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.58", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.59", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.60", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.61", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.62", 50020});
+    addresstable.push_back({"172.30.1.16", "232.110.216.63", 50020});
 
     // B 系 ----------
     addresstable.push_back({"172.30.1.20", "232.210.216.0",  50020});
@@ -763,6 +782,7 @@ int main(int argc, char *argv[])
     addresstable.push_back({"172.30.1.20", "232.210.216.13", 50020});
     addresstable.push_back({"172.30.1.20", "232.210.216.14", 50020});
     addresstable.push_back({"172.30.1.20", "232.210.216.15", 50020});
+
     addresstable.push_back({"172.30.1.22", "232.210.216.16", 50020});
     addresstable.push_back({"172.30.1.22", "232.210.216.17", 50020});
     addresstable.push_back({"172.30.1.22", "232.210.216.18", 50020});
@@ -779,6 +799,7 @@ int main(int argc, char *argv[])
     addresstable.push_back({"172.30.1.22", "232.210.216.29", 50020});
     addresstable.push_back({"172.30.1.22", "232.210.216.30", 50020});
     addresstable.push_back({"172.30.1.22", "232.210.216.31", 50020});
+
     addresstable.push_back({"172.30.1.24", "232.210.216.32", 50020});
     addresstable.push_back({"172.30.1.24", "232.210.216.33", 50020});
     addresstable.push_back({"172.30.1.24", "232.210.216.34", 50020});
@@ -795,6 +816,23 @@ int main(int argc, char *argv[])
     addresstable.push_back({"172.30.1.24", "232.210.216.45", 50020});
     addresstable.push_back({"172.30.1.24", "232.210.216.46", 50020});
     addresstable.push_back({"172.30.1.24", "232.210.216.47", 50020});
+
+    addresstable.push_back({"172.30.1.26", "232.210.216.48", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.49", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.50", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.51", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.52", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.53", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.54", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.55", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.56", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.57", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.58", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.59", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.60", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.61", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.62", 50020});
+    addresstable.push_back({"172.30.1.26", "232.210.216.63", 50020});
 
     int local_ips_size    = local_ips.size();
     int cpu_affinity_size = args.cpu_affinity.size();
