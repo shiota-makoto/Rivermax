@@ -446,7 +446,7 @@ void RxStream::process_packets(const rmx_input_completion *comp)
         m_statistics.received_bytes += header_size;
 
         if (m_use_checksum_header) {
-            ChecksumHeader *hdr = (ChecksumHeader*)header_ptr;
+            // ChecksumHeader *hdr = (ChecksumHeader*)header_ptr;
 
             uint32_t seqnum = header_ptr[3] | header_ptr[2] << 8;            
             uint8_t cc = 0x0F & header_ptr[0];
@@ -529,12 +529,12 @@ struct GenericReceiverArgs
     std::string dst_ip;
     std::string src_ip;
     uint16_t port;
-    uint16_t header_size = 0;
+    uint16_t header_size = 20;
     uint16_t payload_size = 1500;
-    uint32_t buffer_elements = 1 << 18;
+    uint32_t buffer_elements = 1 << 16;
     uint16_t flow_id = 1;
     int gpu = GPU_ID_INVALID;
-    bool use_checksum_header = false;
+    bool use_checksum_header = true;
     bool wait_for_event = false;
     std::vector<int> cpu_affinity;
 };
@@ -637,17 +637,20 @@ bool run(const GenericReceiverArgs& args)
 int main(int argc, char *argv[])
 {
     GenericReceiverArgs args;
+    std::vector<std::string> local_ips;
+    int streams_size = 1;
 
     CLI::App app{"Mellanox Rivermax Generic RX Demo App"};
-    app.add_option("-i,--interface-ip", args.local_ip, "IP of the local interface")->required()->check(CLI::ValidIPV4);
-    app.add_option("-m,--dst-address", args.dst_ip, "Destination address to bind to")/*->required()*/->check(CLI::ValidIPV4);
-    app.add_option("-s,--src-address", args.src_ip, "Source address to read from")/*->required()*/->check(CLI::ValidIPV4);
-    app.add_option("-p,--port", args.port, "Receive port to use")/*->required()*/->check(CLI::Range(1, 65535));
-    auto *opt_checksum = app.add_flag("-x,--checksum-header", args.use_checksum_header, "Use checksum header");
-    app.add_option("-r,--header-size", args.header_size, "User header size", true)->check(CLI::PositiveNumber); // ->excludes(opt_checksum);
-    app.add_option("-d,--data-size", args.payload_size, "User data (payload) size", true)->check(CLI::PositiveNumber);
-    app.add_option("-k,--packets", args.buffer_elements, "Number of packets to allocate memory for", true)->check(CLI::PositiveNumber);
-    app.add_option("-f,--flow-id", args.flow_id, "Flow id to use", true)->check(CLI::PositiveNumber);
+    app.add_option("-i,--interface-ip", local_ips, "IP of the local interface (Comma separated list of IPs)")->required()->delimiter(',')->check(CLI::ValidIPV4);
+    // app.add_option("-m,--dst-address", args.dst_ip, "Destination address to bind to")/*->required()*/->check(CLI::ValidIPV4);
+    // app.add_option("-s,--src-address", args.src_ip, "Source address to read from")/*->required()*/->check(CLI::ValidIPV4);
+    // app.add_option("-p,--port", args.port, "Receive port to use")/*->required()*/->check(CLI::Range(1, 65535));
+    // auto *opt_checksum = app.add_flag("-x,--checksum-header", args.use_checksum_header, "Use checksum header");
+    // app.add_option("-r,--header-size", args.header_size, "User header size", true)->check(CLI::PositiveNumber); // ->excludes(opt_checksum);
+    // app.add_option("-d,--data-size", args.payload_size, "User data (payload) size", true)->check(CLI::PositiveNumber);
+    // app.add_option("-k,--packets", args.buffer_elements, "Number of packets to allocate memory for", true)->check(CLI::PositiveNumber);
+    // app.add_option("-f,--flow-id", args.flow_id, "Flow id to use", true)->check(CLI::PositiveNumber);
+    app.add_option("-s,--streams", streams_size, "stream number (default is 1)")->check(CLI::Range(1, 128));
     app.add_flag("-w,--wait-event", args.wait_for_event, "Wait for packets instead of busy loop");
 #ifdef CUDA_ENABLED
     app.add_option("-g,--gpu", args.gpu, "GPU to use for GPUDirect (default doesn't use GPU)", true);
@@ -693,6 +696,7 @@ int main(int argc, char *argv[])
         uint16_t     dst_port;
     };
     std::vector<AddressInfo> addresstable;
+    // A 系 ----------
     addresstable.push_back({"172.30.1.10", "232.110.216.0",  50020});
     addresstable.push_back({"172.30.1.10", "232.110.216.1",  50020});
     addresstable.push_back({"172.30.1.10", "232.110.216.2",  50020});
@@ -742,6 +746,7 @@ int main(int argc, char *argv[])
     addresstable.push_back({"172.30.1.14", "232.110.216.46", 50020});
     addresstable.push_back({"172.30.1.14", "232.110.216.47", 50020});
 
+    // B 系 ----------
     addresstable.push_back({"172.30.1.20", "232.210.216.0",  50020});
     addresstable.push_back({"172.30.1.20", "232.210.216.1",  50020});
     addresstable.push_back({"172.30.1.20", "232.210.216.2",  50020});
@@ -791,19 +796,52 @@ int main(int argc, char *argv[])
     addresstable.push_back({"172.30.1.24", "232.210.216.46", 50020});
     addresstable.push_back({"172.30.1.24", "232.210.216.47", 50020});
 
+    int local_ips_size    = local_ips.size();
+    int cpu_affinity_size = args.cpu_affinity.size();
+    
     std::vector<std::thread> threads;   
-    for(int nn=0; nn<72; nn++)
+    for(int nn=0; nn<streams_size; nn++)
     {
         GenericReceiverArgs params = args;
-        params.src_ip = addresstable[nn].src_addr;
-        params.dst_ip = addresstable[nn].dst_addr;
-        params.port   = addresstable[nn].dst_port;
+
+        // local_ip 単数指定の場合：0, 1, 2 と指定する．（最大128stream）
+        if(local_ips_size==1)
+        {
+            params.local_ip = local_ips[0];
+            params.src_ip = addresstable[nn].src_addr;
+            params.dst_ip = addresstable[nn].dst_addr;
+            params.port   = addresstable[nn].dst_port;
+        }
+        // local_ip 複数指定の場合：0, 48, 1, 49 … と指定する．（最大 64x2 stream）
+        else
+        {   int oddeven = nn % 2;
+            int index   = nn / 2;
+            int offset  = oddeven * addresstable.size() / 2 + index;
+            params.local_ip = local_ips[oddeven];
+            params.src_ip = addresstable[offset].src_addr;
+            params.dst_ip = addresstable[offset].dst_addr;
+            params.port   = addresstable[offset].dst_port;
+        }
         
+        // CPU Affinity を順に割り振る
         params.cpu_affinity.clear();
-        params.cpu_affinity.push_back(28 + (nn%4));
+        if(0<cpu_affinity_size)
+        {
+            params.cpu_affinity.push_back(args.cpu_affinity[nn%cpu_affinity_size]);
+        }
+
+        printf("### %s Stream %03d: local-IP:%s / src-IP:%s, dst-IP:%s, port:%d / affinity:%d\n",
+            params.gpu!=GPU_ID_INVALID ? "GPU" : "CPU",
+            nn,
+            params.local_ip.c_str(),
+            params.src_ip.c_str(),
+            params.dst_ip.c_str(),
+            params.port,
+            0<params.cpu_affinity.size() ? params.cpu_affinity[0] : -1 );
 
         threads.push_back(std::thread(run, params));
     }
+
     for(auto& thread : threads)
     {
         thread.join();

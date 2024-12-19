@@ -67,5 +67,6 @@
         "thread": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/home/shiota/dev/Rivermax.git/generic_receiver"
 }

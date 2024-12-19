@@ -41,7 +41,8 @@ The resulting binary can be found in directory `build`.
 The application can be used to demonstrate GPUDirect. Use the following command line to build with [CUDA-Toolkit](https://docs.nvidia.com/cuda/) support:
 
 ```shell
-$ cmake -DRIVERMAX_ENABLE_CUDA=ON -B ./build
+塩田修正済：
+$ cmake -DRIVERMAX_ENABLE_CUDA=ON -DCMAKE_CUDA_COMPILER:PATH=/usr/local/cuda/bin/nvcc -B ./build
 $ cmake --build ./build
 ```
 
@@ -50,7 +51,8 @@ $ cmake --build ./build
 ### Synopsis
 
 ```shell
-generic_receiver --interface-ip <local IP> --multicast-dst <multicast group IP>  --port <multicast group UDP port#> --multicast-src <sender IP> [optional parameters]
+塩田修正済：
+sudo ./build/generic_receiver --interface-ip <local IP> --gpu 0
 ```
 
 To see all command-line options please invoke `generic_receiver --help`.

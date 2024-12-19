@@ -21,7 +21,7 @@ include_guard(GLOBAL)
 #   These options are set ON via command line e.g.:
 #       $ cmake -DRIVERMAX_ENABLE_CUDA=ON
 #
-option(RIVERMAX_ENABLE_CUDA     "Enables CUDA"   OFF)
+option(RIVERMAX_ENABLE_CUDA     "Enables CUDA"   ON)
 option(RIVERMAX_ENABLE_TEGRA    "Enables TEGRA"  OFF)
 
 #------------------------------------------------------------------------------
