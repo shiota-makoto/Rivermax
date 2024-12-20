@@ -1,4 +1,4 @@
-# generic_receiver
+# generic_receiver 塩田修正版
 
 ## Description
 
@@ -41,49 +41,17 @@ The resulting binary can be found in directory `build`.
 The application can be used to demonstrate GPUDirect. Use the following command line to build with [CUDA-Toolkit](https://docs.nvidia.com/cuda/) support:
 
 ```shell
-塩田修正済：
 $ cmake -DRIVERMAX_ENABLE_CUDA=ON -DCMAKE_CUDA_COMPILER:PATH=/usr/local/cuda/bin/nvcc -B ./build
 $ cmake --build ./build
 ```
 
 ## How to Run / Examples
 
-### Synopsis
+### Synopsis & Examples
 
 ```shell
-塩田修正済：
-sudo ./build/generic_receiver --interface-ip <local IP> --gpu 0
-```
-
-To see all command-line options please invoke `generic_receiver --help`.
-
-> `--checksum-header` command-line flag can be used to demonstrate simple GPU utilization. It can be utilized when incoming packets have a header containing a sequence number and a checksum of the data.
-
-### Example #1: _Receiving a simple stream using a specific core affinity_
-
-This example demonstrates receiving a simple stream sent from a sender with source address 192.168.1.3.
-The stream is received via the NIC which has local IP 192.168.1.2. The multicast address and UDP ports
-on which the stream is being received are 239.5.5.5:56789.
-The application is set to run on cores #2, #3 and #4.
-
-```shell
-$ sudo ./generic_receiver --interface-ip 192.168.1.2 --multicast-dst 239.5.5.5 --multicast-src 192.168.1.3 --port 56789 --cpu-affinity 2,3,4
-```
-
-### Example #2: _Receiving a simple stream using defined data sizes_
-
-This example demonstrates receiving a simple stream with the same flow parameters as in the previous example, and the incoming packets are of size 1460 bytes. The initial 40 byte are stripped from the payload as application header and placed in buffers allocated on the CPU. The remaining 1420 bytes are placed in dedicated payload buffers. In this case, the payload buffers are also allocated on the CPU. 
-
-```shell
-$ sudo ./generic_receiver --interface-ip 192.168.1.2 --multicast-dst 239.5.5.5 --multicast-src 192.168.1.3 --port 56789 --header-size 40 --data-size 1460
-```
-
-### Example #3: _Receiving generic data with GPUDirect on Windows_
-This example demonstrates receiving a stream in buffers allocated on GPU memory using GPUDirect and CUDA. When using CUDA, the following environment variable must be set. The GPU selected to be used for this stream is GPU #0. 
-
-```shell
-$ set RIVERMAX_ENABLE_CUDA=1 
-$ generic_receiver.exe --interface-ip 192.168.1.2 --multicast-dst 224.2.3.44 --multicast-src 192.168.1.3 --port 39608 --gpu 0
+sudo ./build/generic_receiver --interface-ip <local IP> --streams 64 --cpu-affinity 24,25 --gpu 0                       (1ポートから64ストリームを受信)
+sudo ./build/generic_receiver --interface-ip <local IP1>,<local IP2> --streams 128 --cpu-affinity 24,25,26,27 --gpu 0   (2ポートから64ストリームずつ受信)
 ```
 
 ## Known Issues / Limitations
